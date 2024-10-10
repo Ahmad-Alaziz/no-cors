@@ -39,12 +39,23 @@ cors_proxy
       "via",
       "connect-time",
       "total-route-time",
-      // Other Heroku added debug headers
-      // 'x-forwarded-for',
-      // 'x-forwarded-proto',
-      // 'x-forwarded-port',
     ],
-    redirectSameOrigin: true,
+    redirectSameOrigin: false, // Prevent redirects for same-origin requests
+    handleInitialRequest: (req, res) => {
+      if (req.method === "OPTIONS") {
+        // Handle preflight request
+        res.writeHead(200, {
+          "Access-Control-Allow-Origin": "*", // Allow all origins
+          "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+          "Access-Control-Allow-Headers":
+            "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+          "Access-Control-Allow-Credentials": "true",
+        });
+        res.end();
+        return true; // Return true to skip proxying the request further
+      }
+      return false; // Continue with the proxy if it's not a preflight request
+    },
     httpProxyOptions: {
       // Do not add X-Forwarded-For, etc. headers, because Heroku already adds it.
       xfwd: false,
